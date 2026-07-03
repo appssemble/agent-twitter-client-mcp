@@ -16,19 +16,19 @@ services:
       - MCP_TRANSPORT=http
       # Optional bearer token protecting the /mcp endpoint
       - MCP_AUTH_TOKEN=${MCP_AUTH_TOKEN:-}
-      # Twitter authentication - these should be set in a .env file or through environment variables
-      - AUTH_METHOD=cookies
-      - TWITTER_COOKIES=[]
+      # Twitter authentication - set these in a .env file or through environment variables
+      - AUTH_METHOD=${AUTH_METHOD:-cookies}
+      - TWITTER_COOKIES=${TWITTER_COOKIES:-[]}
       # For username/password auth
-      - TWITTER_USERNAME=
-      - TWITTER_PASSWORD=
-      - TWITTER_EMAIL=
-      - TWITTER_2FA_SECRET=
+      - TWITTER_USERNAME=${TWITTER_USERNAME:-}
+      - TWITTER_PASSWORD=${TWITTER_PASSWORD:-}
+      - TWITTER_EMAIL=${TWITTER_EMAIL:-}
+      - TWITTER_2FA_SECRET=${TWITTER_2FA_SECRET:-}
       # For API auth
-      - TWITTER_API_KEY=
-      - TWITTER_API_SECRET_KEY=
-      - TWITTER_ACCESS_TOKEN=
-      - TWITTER_ACCESS_TOKEN_SECRET=
+      - TWITTER_API_KEY=${TWITTER_API_KEY:-}
+      - TWITTER_API_SECRET_KEY=${TWITTER_API_SECRET_KEY:-}
+      - TWITTER_ACCESS_TOKEN=${TWITTER_ACCESS_TOKEN:-}
+      - TWITTER_ACCESS_TOKEN_SECRET=${TWITTER_ACCESS_TOKEN_SECRET:-}
     volumes:
       - ./logs:/app/logs
     networks:

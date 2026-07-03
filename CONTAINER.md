@@ -39,6 +39,27 @@ Then run:
 docker-compose up -d
 ```
 
+### Deploy on Coolify
+
+The repository includes `docker-compose.coolify.yml`, tailored for Coolify:
+
+1. In Coolify, add a new resource: **Docker Compose** (public repository or
+   your fork), pointing at this repository.
+2. Set **Docker Compose Location** to `/docker-compose.coolify.yml`.
+3. Coolify reads the compose file and automatically creates the environment
+   variables in the UI:
+   - `TWITTER_COOKIES` - **required** (shown first with a red border; deploy
+     is blocked until you provide it). Paste your cookie JSON array.
+   - `MCP_AUTH_TOKEN` - **auto-generated** secure random token. Copy it from
+     the Environment Variables tab to configure your MCP clients.
+   - `AUTH_METHOD` and the credential/API variables - pre-filled with
+     defaults, editable if you use another auth method.
+4. Set your domain on the service. The `SERVICE_FQDN_MCP_3000` magic variable
+   makes Coolify route the domain (with HTTPS) to container port 3000
+   automatically - no manual port mapping needed.
+5. Deploy. Your MCP endpoint is `https://your-domain/mcp` and the health
+   check is at `https://your-domain/health`.
+
 ### Connect an MCP client over HTTP
 
 The container serves MCP over Streamable HTTP at `http://localhost:3001/mcp`

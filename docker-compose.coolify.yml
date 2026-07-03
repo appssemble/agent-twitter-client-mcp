@@ -1,0 +1,54 @@
+# Docker Compose file for deploying on Coolify.
+#
+# In Coolify: create a "Docker Compose" resource pointing at this repository
+# and set "Docker Compose Location" to /docker-compose.coolify.yml.
+#
+# Coolify reads the ${VAR} placeholders below and surfaces them in the UI:
+#   - TWITTER_COOKIES is required (deploy is blocked until you fill it in)
+#   - MCP_AUTH_TOKEN is auto-generated as a secure random value
+#   - SERVICE_FQDN_MCP_3000 makes Coolify route your chosen domain to the
+#     container port 3000 automatically (no manual port mapping needed)
+
+services:
+  agent-twitter-client-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Coolify magic variable: auto-configures the domain -> port 3000 proxy
+      - SERVICE_FQDN_MCP_3000
+      - NODE_ENV=production
+      - PORT=3000
+      # Serve MCP over Streamable HTTP at /mcp (set to "stdio" for stdio transport)
+      - MCP_TRANSPORT=http
+      # Bearer token protecting the /mcp endpoint. Coolify auto-generates a
+      # 64-character random value; copy it from the Environment Variables tab.
+      - MCP_AUTH_TOKEN=${SERVICE_PASSWORD_64_MCPTOKEN}
+      # Twitter authentication (cookies is the recommended method).
+      # TWITTER_COOKIES is a JSON array, e.g.:
+      # ["auth_token=YOUR_AUTH_TOKEN; Domain=.twitter.com", "ct0=YOUR_CT0_VALUE; Domain=.twitter.com"]
+      - AUTH_METHOD=${AUTH_METHOD:-cookies}
+      - TWITTER_COOKIES=${TWITTER_COOKIES:?}
+      # For username/password auth (only if AUTH_METHOD=credentials)
+      - TWITTER_USERNAME=${TWITTER_USERNAME:-}
+      - TWITTER_PASSWORD=${TWITTER_PASSWORD:-}
+      - TWITTER_EMAIL=${TWITTER_EMAIL:-}
+      - TWITTER_2FA_SECRET=${TWITTER_2FA_SECRET:-}
+      # For API auth (only if AUTH_METHOD=api)
+      - TWITTER_API_KEY=${TWITTER_API_KEY:-}
+      - TWITTER_API_SECRET_KEY=${TWITTER_API_SECRET_KEY:-}
+      - TWITTER_ACCESS_TOKEN=${TWITTER_ACCESS_TOKEN:-}
+      - TWITTER_ACCESS_TOKEN_SECRET=${TWITTER_ACCESS_TOKEN_SECRET:-}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
