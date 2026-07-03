@@ -71,6 +71,31 @@ agent-twitter-client-mcp
 npx agent-twitter-client-mcp
 ```
 
+### Transport Modes
+
+The server supports two MCP transports, selected with the `MCP_TRANSPORT` environment variable:
+
+- `stdio` (default): the standard input/output transport used by Claude Desktop and other local MCP clients. An auxiliary HTTP server exposes `/health` (disable with `DISABLE_HTTP_SERVER=true` or `--no-http-server`).
+- `http`: serves MCP over Streamable HTTP at `POST /mcp` (plus `GET /health`) on `PORT` (default 3000). This is the mode used by the Docker image, so the container can be deployed as a remote MCP server.
+
+```bash
+# Run as an HTTP MCP server on port 3000
+MCP_TRANSPORT=http npx agent-twitter-client-mcp
+```
+
+In HTTP mode you can optionally set `MCP_AUTH_TOKEN` to require an `Authorization: Bearer <token>` header on the `/mcp` endpoint. This is strongly recommended for any deployment reachable by others, since the server holds your Twitter credentials:
+
+```bash
+MCP_TRANSPORT=http MCP_AUTH_TOKEN=your-secret-token npx agent-twitter-client-mcp
+```
+
+Connect a client, e.g. Claude Code:
+
+```bash
+claude mcp add --transport http twitter http://localhost:3000/mcp \
+  --header "Authorization: Bearer your-secret-token"
+```
+
 ### Demo Scripts
 
 The package includes a `demo` directory with example scripts that demonstrate various features:

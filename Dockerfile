@@ -1,5 +1,7 @@
 # Use a Node.js image for building the server
-FROM node:20-alpine AS builder
+# (Debian-based: agent-twitter-client's native wrtc binary requires glibc,
+# which Alpine/musl does not provide)
+FROM node:20-slim AS builder
 
 # Set the working directory in the container
 WORKDIR /app
@@ -18,7 +20,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # Use a smaller Node.js image for the runtime
-FROM node:20-alpine
+FROM node:20-slim
 
 # Set the working directory in the runtime image
 WORKDIR /app
@@ -39,6 +41,8 @@ COPY README.md ./
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
+# Serve MCP over Streamable HTTP at /mcp (set to "stdio" for stdio transport)
+ENV MCP_TRANSPORT=http
 
 # Add metadata labels
 LABEL org.opencontainers.image.source="https://github.com/ryanmac/agent-twitter-client-mcp"
@@ -46,9 +50,9 @@ LABEL org.opencontainers.image.description="MCP server for Twitter integration u
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.documentation="https://github.com/ryanmac/agent-twitter-client-mcp"
 
-# Add healthcheck
+# Add healthcheck (node-based: the slim image ships no wget/curl)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
+  CMD node -e "fetch('http://localhost:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 # Expose the port
 EXPOSE ${PORT}
