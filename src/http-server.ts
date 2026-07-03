@@ -90,6 +90,12 @@ export function startHttpServer(authConfig: AuthConfig, port: number): http.Serv
 
     if (url.pathname === '/mcp') {
       await handleMcpRequest(authConfig, req, res);
+    } else if (url.pathname === '/live') {
+      // Liveness probe: only checks that the HTTP server is up. Container
+      // healthchecks must use this, not /health - the deep check performs a
+      // real Twitter login, so stale cookies would take the whole endpoint
+      // offline (and probing it every 30s risks getting the session flagged).
+      sendJson(res, 200, { status: 'ok' });
     } else if (url.pathname === '/health') {
       await handleHealthRequest(authConfig, res);
     } else {

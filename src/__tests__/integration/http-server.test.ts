@@ -126,6 +126,12 @@ describe('HTTP transport', () => {
     expect(response.status).toBe(405);
   });
 
+  test('GET /live returns 200 without touching Twitter', async () => {
+    const response = await fetch(`${baseUrl}/live`);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: 'ok' });
+  });
+
   test('returns 404 for unknown paths', async () => {
     const response = await fetch(`${baseUrl}/unknown`);
     expect(response.status).toBe(404);

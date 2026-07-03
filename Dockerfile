@@ -50,9 +50,12 @@ LABEL org.opencontainers.image.description="MCP server for Twitter integration u
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.documentation="https://github.com/ryanmac/agent-twitter-client-mcp"
 
-# Add healthcheck (node-based: the slim image ships no wget/curl)
+# Add healthcheck (node-based: the slim image ships no wget/curl).
+# Probes /live (liveness only) - /health performs a real Twitter login, and
+# tying container health to it would take /mcp offline whenever cookies
+# expire, besides hitting Twitter every 30s.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "fetch('http://localhost:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://localhost:'+(process.env.PORT||3000)+'/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 # Expose the port
 EXPOSE ${PORT}
