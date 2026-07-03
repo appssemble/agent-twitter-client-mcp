@@ -1,5 +1,5 @@
 import * as zod from 'zod';
-import { Tweet, Profile } from 'agent-twitter-client';
+import { Tweet, Profile } from '@the-convocation/twitter-scraper';
 
 // Authentication Types
 export type AuthMethod = 'cookies' | 'credentials' | 'api';

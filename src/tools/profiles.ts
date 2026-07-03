@@ -1,6 +1,5 @@
 import {
   GetUserProfileSchema,
-  FollowUserSchema,
   GetFollowersSchema,
   GetFollowingSchema,
   AuthConfig
@@ -10,10 +9,6 @@ import { validateInput } from '../utils/validators.js';
 
 // Define types for the validated parameters
 type GetUserProfileParams = {
-  username: string;
-};
-
-type FollowUserParams = {
   username: string;
 };
 
@@ -29,33 +24,23 @@ type GetFollowingParams = {
 
 export class ProfileTools {
   private client: TwitterClient;
-  
+
   constructor() {
     this.client = new TwitterClient();
   }
-  
+
   /**
    * Get a user profile
    */
   async getUserProfile(authConfig: AuthConfig, args: unknown) {
     const params = validateInput<GetUserProfileParams>(GetUserProfileSchema, args);
     const profile = await this.client.getUserProfile(authConfig, params.username);
-    
+
     return {
       profile
     };
   }
-  
-  /**
-   * Follow a user
-   */
-  async followUser(authConfig: AuthConfig, args: unknown) {
-    const params = validateInput<FollowUserParams>(FollowUserSchema, args);
-    const result = await this.client.followUser(authConfig, params.username);
-    
-    return result;
-  }
-  
+
   /**
    * Get a user's followers
    */
@@ -66,14 +51,14 @@ export class ProfileTools {
       params.userId,
       params.count
     );
-    
+
     return {
       profiles,
       count: profiles.length,
       userId: params.userId
     };
   }
-  
+
   /**
    * Get a user's following
    */
@@ -84,11 +69,11 @@ export class ProfileTools {
       params.userId,
       params.count
     );
-    
+
     return {
       profiles,
       count: profiles.length,
       userId: params.userId
     };
   }
-} 
+}

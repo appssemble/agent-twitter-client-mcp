@@ -42,7 +42,7 @@
   "dependencies": {
     "@hono/node-server": "^1.19.13",
     "@modelcontextprotocol/sdk": "^1.26.0",
-    "agent-twitter-client": "^0.0.18",
+    "@the-convocation/twitter-scraper": "^0.22.3",
     "dotenv": "^16.4.7",
     "express-rate-limit": "^8.3.2",
     "flatted": "^3.4.2",

@@ -1,9 +1,8 @@
-import { Scraper } from 'agent-twitter-client';
+import { Scraper } from '@the-convocation/twitter-scraper';
 import {
   AuthConfig,
   CookieAuth,
   CredentialsAuth,
-  ApiAuth,
   TwitterMcpError
 } from './types.js';
 
@@ -27,15 +26,7 @@ export class AuthenticationManager {
     const key = this.getScraperKey(config);
 
     if (this.scraperInstances.has(key)) {
-      const scraper = this.scraperInstances.get(key)!;
-      try {
-        const isLoggedIn = await scraper.isLoggedIn();
-        if (isLoggedIn) {
-          return scraper;
-        }
-      } catch (error) {
-        console.error('Error checking login status:', error);
-      }
+      return this.scraperInstances.get(key)!;
     }
 
     // Create a new scraper and authenticate
@@ -65,8 +56,11 @@ export class AuthenticationManager {
         await this.authenticateWithCredentials(scraper, config.data as CredentialsAuth);
         break;
       case 'api':
-        await this.authenticateWithApi(scraper, config.data as ApiAuth);
-        break;
+        throw new TwitterMcpError(
+          'API key authentication is no longer supported. Use cookie or credential authentication instead.',
+          'unsupported_auth_method',
+          400
+        );
       default:
         throw new TwitterMcpError(
           `Unsupported authentication method: ${config.method}`,
@@ -77,11 +71,20 @@ export class AuthenticationManager {
   }
 
   /**
+   * Twitter moved to x.com; the scraper stores cookies against x.com URLs,
+   * so cookies exported with the old .twitter.com domain would be silently
+   * rejected by the cookie jar. Rewrite the domain so both forms work.
+   */
+  private normalizeCookieDomain(cookie: string): string {
+    return cookie.replace(/Domain=\.?twitter\.com/i, 'Domain=x.com');
+  }
+
+  /**
    * Authenticate using cookies
    */
   private async authenticateWithCookies(scraper: Scraper, auth: CookieAuth): Promise<void> {
     try {
-      await scraper.setCookies(auth.cookies);
+      await scraper.setCookies(auth.cookies.map(c => this.normalizeCookieDomain(c)));
       const isLoggedIn = await scraper.isLoggedIn();
       if (!isLoggedIn) {
         throw new TwitterMcpError(
@@ -123,31 +126,6 @@ export class AuthenticationManager {
   }
 
   /**
-   * Authenticate using Twitter API keys
-   */
-  private async authenticateWithApi(scraper: Scraper, auth: ApiAuth): Promise<void> {
-    try {
-      // Login with temporary credentials to get a session
-      await scraper.login(
-        'temp_user',
-        'temp_pass',
-        undefined,
-        undefined,
-        auth.apiKey,
-        auth.apiSecretKey,
-        auth.accessToken,
-        auth.accessTokenSecret
-      );
-    } catch (error) {
-      throw new TwitterMcpError(
-        `API authentication error: ${(error as Error).message}`,
-        'api_auth_error',
-        401
-      );
-    }
-  }
-
-  /**
    * Generate a unique key for the scraper instance
    */
   private getScraperKey(config: AuthConfig): string {
@@ -157,30 +135,25 @@ export class AuthenticationManager {
     let authToken: string;
     let ct0: string;
     let creds: CredentialsAuth;
-    let api: ApiAuth;
-    
+
     switch (config.method) {
       case 'cookies':
         // For cookies, use a combination of auth_token and ct0 if available
         cookieAuth = config.data as CookieAuth;
         authTokenCookie = cookieAuth.cookies.find(c => c.includes('auth_token='));
         ct0Cookie = cookieAuth.cookies.find(c => c.includes('ct0='));
-        
+
         if (authTokenCookie && ct0Cookie) {
           authToken = authTokenCookie.split('=')[1].split(';')[0];
           ct0 = ct0Cookie.split('=')[1].split(';')[0];
           return `cookies_${authToken}_${ct0}`;
         }
         return `cookies_${Date.now()}`;
-        
+
       case 'credentials':
         creds = config.data as CredentialsAuth;
         return `credentials_${creds.username}`;
-        
-      case 'api':
-        api = config.data as ApiAuth;
-        return `api_${api.apiKey}`;
-        
+
       default:
         return `unknown_${Date.now()}`;
     }
@@ -192,45 +165,4 @@ export class AuthenticationManager {
   public clearAllScrapers(): void {
     this.scraperInstances.clear();
   }
-
-  /**
-   * Try to authenticate with both cookies and credentials if available
-   * This is useful for Grok which may require both
-   */
-  public async getHybridScraper(cookieConfig?: AuthConfig, credentialsConfig?: AuthConfig): Promise<Scraper> {
-    // Create a new scraper
-    const scraper = new Scraper();
-    
-    let isLoggedIn = false;
-    
-    // Try cookies first if available
-    if (cookieConfig && cookieConfig.method === 'cookies') {
-      try {
-        await this.authenticateWithCookies(scraper, cookieConfig.data as CookieAuth);
-        isLoggedIn = await scraper.isLoggedIn();
-      } catch (error) {
-        console.warn('Cookie authentication failed, will try credentials:', error);
-      }
-    }
-    
-    // If cookies didn't work or weren't provided, try credentials
-    if (!isLoggedIn && credentialsConfig && credentialsConfig.method === 'credentials') {
-      try {
-        await this.authenticateWithCredentials(scraper, credentialsConfig.data as CredentialsAuth);
-        isLoggedIn = await scraper.isLoggedIn();
-      } catch (error) {
-        console.warn('Credential authentication failed:', error);
-      }
-    }
-    
-    if (!isLoggedIn) {
-      throw new TwitterMcpError(
-        'Failed to authenticate with both cookies and credentials',
-        'hybrid_auth_failure',
-        401
-      );
-    }
-    
-    return scraper;
-  }
-} 
+}

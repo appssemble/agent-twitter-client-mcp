@@ -9,7 +9,6 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { TweetTools } from './tools/tweets.js';
 import { ProfileTools } from './tools/profiles.js';
-import { GrokTools } from './tools/grok.js';
 import { TwitterMcpError, AuthConfig } from './types.js';
 import { performHealthCheck } from './health.js';
 import { logError, logInfo, sanitizeForLogging } from './utils/logger.js';
@@ -17,7 +16,6 @@ import { logError, logInfo, sanitizeForLogging } from './utils/logger.js';
 // Create tools instances
 const tweetTools = new TweetTools();
 const profileTools = new ProfileTools();
-const grokTools = new GrokTools();
 
 // Create a configured MCP server instance. HTTP mode creates one per request
 // (stateless transport), stdio mode creates a single long-lived one.
@@ -109,157 +107,6 @@ export function createTwitterMcpServer(authConfig: AuthConfig): Server {
           }
         } as Tool,
 
-        {
-          name: 'send_tweet',
-          description: 'Post a new tweet',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              text: {
-                type: 'string',
-                description: 'Tweet content (max 280 characters)'
-              },
-              replyToTweetId: {
-                type: 'string',
-                description: 'ID of tweet to reply to (optional)'
-              },
-              media: {
-                type: 'array',
-                description: 'Media attachments (optional, max 4 images or 1 video)',
-                items: {
-                  type: 'object',
-                  properties: {
-                    data: {
-                      type: 'string',
-                      description: 'Base64 encoded media data'
-                    },
-                    mediaType: {
-                      type: 'string',
-                      description: 'MIME type of media (e.g., image/jpeg, video/mp4)'
-                    }
-                  },
-                  required: ['data', 'mediaType']
-                }
-              }
-            },
-            required: ['text']
-          }
-        } as Tool,
-
-        {
-          name: 'send_tweet_with_poll',
-          description: 'Post a tweet with a poll',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              text: {
-                type: 'string',
-                description: 'Tweet content (max 280 characters)'
-              },
-              replyToTweetId: {
-                type: 'string',
-                description: 'ID of tweet to reply to (optional)'
-              },
-              poll: {
-                type: 'object',
-                description: 'Poll configuration',
-                properties: {
-                  options: {
-                    type: 'array',
-                    description: 'Poll options (2-4 options)',
-                    items: {
-                      type: 'object',
-                      properties: {
-                        label: {
-                          type: 'string',
-                          description: 'Option label (max 25 characters)'
-                        }
-                      },
-                      required: ['label']
-                    },
-                    minItems: 2,
-                    maxItems: 4
-                  },
-                  durationMinutes: {
-                    type: 'number',
-                    description: 'Poll duration in minutes (5-10080, default 1440)',
-                    default: 1440
-                  }
-                },
-                required: ['options']
-              }
-            },
-            required: ['text', 'poll']
-          }
-        } as Tool,
-
-        {
-          name: 'like_tweet',
-          description: 'Like a tweet',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              id: {
-                type: 'string',
-                description: 'Tweet ID to like'
-              }
-            },
-            required: ['id']
-          }
-        } as Tool,
-
-        {
-          name: 'retweet',
-          description: 'Retweet a tweet',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              id: {
-                type: 'string',
-                description: 'Tweet ID to retweet'
-              }
-            },
-            required: ['id']
-          }
-        } as Tool,
-
-        {
-          name: 'quote_tweet',
-          description: 'Quote a tweet',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              text: {
-                type: 'string',
-                description: 'Quote content (max 280 characters)'
-              },
-              quotedTweetId: {
-                type: 'string',
-                description: 'ID of tweet to quote'
-              },
-              media: {
-                type: 'array',
-                description: 'Media attachments (optional, max 4 images or 1 video)',
-                items: {
-                  type: 'object',
-                  properties: {
-                    data: {
-                      type: 'string',
-                      description: 'Base64 encoded media data'
-                    },
-                    mediaType: {
-                      type: 'string',
-                      description: 'MIME type of media (e.g., image/jpeg, video/mp4)'
-                    }
-                  },
-                  required: ['data', 'mediaType']
-                }
-              }
-            },
-            required: ['text', 'quotedTweetId']
-          }
-        } as Tool,
-
         // Profile tools
         {
           name: 'get_user_profile',
@@ -270,21 +117,6 @@ export function createTwitterMcpServer(authConfig: AuthConfig): Server {
               username: {
                 type: 'string',
                 description: 'Twitter username (without @)'
-              }
-            },
-            required: ['username']
-          }
-        } as Tool,
-
-        {
-          name: 'follow_user',
-          description: 'Follow a Twitter user',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              username: {
-                type: 'string',
-                description: 'Username to follow (without @)'
               }
             },
             required: ['username']
@@ -328,36 +160,6 @@ export function createTwitterMcpServer(authConfig: AuthConfig): Server {
               }
             },
             required: ['userId']
-          }
-        } as Tool,
-
-        // Grok tools
-        {
-          name: 'grok_chat',
-          description: 'Chat with Grok via Twitter',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              message: {
-                type: 'string',
-                description: 'Message to send to Grok'
-              },
-              conversationId: {
-                type: 'string',
-                description: 'Optional conversation ID for continuing a conversation'
-              },
-              returnSearchResults: {
-                type: 'boolean',
-                description: 'Whether to return search results',
-                default: true
-              },
-              returnCitations: {
-                type: 'boolean',
-                description: 'Whether to return citations',
-                default: true
-              }
-            },
-            required: ['message']
           }
         } as Tool,
 
@@ -412,60 +214,12 @@ export function createTwitterMcpServer(authConfig: AuthConfig): Server {
             }] as TextContent[]
           };
 
-        case 'send_tweet':
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(await tweetTools.sendTweet(authConfig, args))
-            }] as TextContent[]
-          };
-
-        case 'send_tweet_with_poll':
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(await tweetTools.sendTweetWithPoll(authConfig, args))
-            }] as TextContent[]
-          };
-
-        case 'like_tweet':
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(await tweetTools.likeTweet(authConfig, args))
-            }] as TextContent[]
-          };
-
-        case 'retweet':
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(await tweetTools.retweet(authConfig, args))
-            }] as TextContent[]
-          };
-
-        case 'quote_tweet':
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(await tweetTools.quoteTweet(authConfig, args))
-            }] as TextContent[]
-          };
-
         // Profile tools
         case 'get_user_profile':
           return {
             content: [{
               type: 'text',
               text: JSON.stringify(await profileTools.getUserProfile(authConfig, args))
-            }] as TextContent[]
-          };
-
-        case 'follow_user':
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(await profileTools.followUser(authConfig, args))
             }] as TextContent[]
           };
 
@@ -482,15 +236,6 @@ export function createTwitterMcpServer(authConfig: AuthConfig): Server {
             content: [{
               type: 'text',
               text: JSON.stringify(await profileTools.getFollowing(authConfig, args))
-            }] as TextContent[]
-          };
-
-        // Grok tools
-        case 'grok_chat':
-          return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(await grokTools.grokChat(authConfig, args))
             }] as TextContent[]
           };
 

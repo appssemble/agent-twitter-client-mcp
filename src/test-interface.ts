@@ -7,7 +7,6 @@ import dotenv from 'dotenv';
 import readline from 'readline';
 import { TweetTools } from './tools/tweets.js';
 import { ProfileTools } from './tools/profiles.js';
-import { GrokTools } from './tools/grok.js';
 
 // Load environment variables
 dotenv.config();
@@ -15,7 +14,6 @@ dotenv.config();
 // Create tools instances
 const tweetTools = new TweetTools();
 const profileTools = new ProfileTools();
-const grokTools = new GrokTools();
 const client = new TwitterClient();
 
 // Configure auth from environment variables
@@ -96,14 +94,8 @@ const commands = {
   'tweets <username> [count]': 'Get tweets from a user',
   'tweet <id>': 'Get a specific tweet by ID',
   'search <query> [count]': 'Search for tweets',
-  'post <text>': 'Post a new tweet',
-  'like <id>': 'Like a tweet',
-  'retweet <id>': 'Retweet a tweet',
-  'quote <id> <text>': 'Quote a tweet',
-  'follow <username>': 'Follow a user',
   'followers <userId> [count]': 'Get a user\'s followers',
   'following <userId> [count]': 'Get users a user is following',
-  'grok <message>': 'Chat with Grok',
   'help': 'Show available commands',
   'exit': 'Exit the test interface'
 };
@@ -176,61 +168,6 @@ async function processCommand(input: string) {
         console.log(JSON.stringify(searchResult, null, 2));
         break;
 
-      case 'post':
-        if (!args[1]) {
-          console.log('Error: Tweet text is required');
-          break;
-        }
-        const tweetText = args.slice(1).join(' ');
-        console.log(`Posting tweet: "${tweetText}"...`);
-        const postResult = await tweetTools.sendTweet(authConfig, { text: tweetText });
-        console.log(JSON.stringify(postResult, null, 2));
-        break;
-
-      case 'like':
-        if (!args[1]) {
-          console.log('Error: Tweet ID is required');
-          break;
-        }
-        console.log(`Liking tweet ${args[1]}...`);
-        const likeResult = await tweetTools.likeTweet(authConfig, { id: args[1] });
-        console.log(JSON.stringify(likeResult, null, 2));
-        break;
-
-      case 'retweet':
-        if (!args[1]) {
-          console.log('Error: Tweet ID is required');
-          break;
-        }
-        console.log(`Retweeting tweet ${args[1]}...`);
-        const retweetResult = await tweetTools.retweet(authConfig, { id: args[1] });
-        console.log(JSON.stringify(retweetResult, null, 2));
-        break;
-
-      case 'quote':
-        if (!args[1] || !args[2]) {
-          console.log('Error: Tweet ID and quote text are required');
-          break;
-        }
-        const quoteText = args.slice(2).join(' ');
-        console.log(`Quoting tweet ${args[1]} with: "${quoteText}"...`);
-        const quoteResult = await tweetTools.quoteTweet(authConfig, { 
-          quotedTweetId: args[1], 
-          text: quoteText 
-        });
-        console.log(JSON.stringify(quoteResult, null, 2));
-        break;
-
-      case 'follow':
-        if (!args[1]) {
-          console.log('Error: Username is required');
-          break;
-        }
-        console.log(`Following user ${args[1]}...`);
-        const followResult = await profileTools.followUser(authConfig, { username: args[1] });
-        console.log(JSON.stringify(followResult, null, 2));
-        break;
-
       case 'followers':
         if (!args[1]) {
           console.log('Error: User ID is required');
@@ -257,21 +194,6 @@ async function processCommand(input: string) {
           count: followingCount 
         });
         console.log(JSON.stringify(followingResult, null, 2));
-        break;
-
-      case 'grok':
-        if (!args[1]) {
-          console.log('Error: Message is required');
-          break;
-        }
-        const message = args.slice(1).join(' ');
-        console.log(`Sending message to Grok: "${message}"...`);
-        const grokResult = await grokTools.grokChat(authConfig, { 
-          message, 
-          returnSearchResults: true, 
-          returnCitations: true 
-        });
-        console.log(JSON.stringify(grokResult, null, 2));
         break;
 
       case 'help':

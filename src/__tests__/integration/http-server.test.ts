@@ -76,9 +76,15 @@ describe('HTTP transport', () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     const toolNames = body.result.tools.map((tool: { name: string }) => tool.name);
-    expect(toolNames).toContain('get_user_tweets');
-    expect(toolNames).toContain('send_tweet');
-    expect(toolNames).toContain('health_check');
+    expect(toolNames).toEqual([
+      'get_user_tweets',
+      'get_tweet_by_id',
+      'search_tweets',
+      'get_user_profile',
+      'get_followers',
+      'get_following',
+      'health_check'
+    ]);
   });
 
   test('rejects requests without a token when MCP_AUTH_TOKEN is set', async () => {

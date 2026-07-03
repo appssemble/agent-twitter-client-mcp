@@ -1,4 +1,4 @@
-import { Tweet, Profile } from 'agent-twitter-client';
+import { Tweet, Profile } from '@the-convocation/twitter-scraper';
 import { TweetResponse, ProfileResponse, SearchResponse } from '../types.js';
 
 /**

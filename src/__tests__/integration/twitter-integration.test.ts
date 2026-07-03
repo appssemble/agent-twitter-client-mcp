@@ -82,13 +82,4 @@ const runIntegrationTests = process.env.RUN_INTEGRATION_TESTS === 'true';
     expect(tweets.length).toBeGreaterThan(0);
   }, 30000);
 
-  // Only run write tests if explicitly enabled
-  const runWriteTests = process.env.RUN_WRITE_TESTS === 'true';
-
-  (runWriteTests ? test : test.skip)('can post a tweet', async () => {
-    const testText = `Test tweet from Twitter MCP ${Date.now()}`;
-    const tweet = await client.sendTweet(authConfig, testText);
-    expect(tweet).toBeDefined();
-    expect(tweet.text).toBe(testText);
-  }, 30000);
 }); 

@@ -4,7 +4,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/node/v/agent-twitter-client-mcp.svg)](https://nodejs.org)
 
-A Model Context Protocol (MCP) server that integrates with Twitter using the `agent-twitter-client` package, allowing AI models to interact with Twitter without direct API access.
+A Model Context Protocol (MCP) server that integrates with Twitter/X using the [`@the-convocation/twitter-scraper`](https://github.com/the-convocation/twitter-scraper) package, allowing AI models to read Twitter data without direct API access.
+
+> **Note (2026):** This server previously used `agent-twitter-client`, which is
+> unmaintained and no longer works against X's current API surface. It now
+> uses the actively maintained scraper it was originally forked from. That
+> library is **read-only**, so write operations (posting, liking, retweeting,
+> following) and Grok chat were removed.
 
 ## Features
 
@@ -12,29 +18,17 @@ A Model Context Protocol (MCP) server that integrates with Twitter using the `ag
 
   - Cookie-based authentication (recommended)
   - Username/password authentication
-  - Twitter API v2 credentials
 
-- **Tweet Operations**:
+- **Tweet Operations** (read-only):
 
   - Fetch tweets from users
   - Get specific tweets by ID
   - Search tweets
-  - Send tweets with text and media
-  - Create polls
-  - Like, retweet, and quote tweets
 
-- **User Operations**:
+- **User Operations** (read-only):
 
   - Get user profiles
-  - Follow users
   - Get followers and following lists
-
-- **Grok Integration**:
-  - Chat with Grok via Twitter's interface
-  - Continue conversations with conversation IDs
-  - Get web search results and citations
-  - Access Twitter's real-time data through Grok
-  - **Note**: Grok functionality requires [agent-twitter-client v0.0.19](https://github.com/elizaOS/agent-twitter-client/releases/tag/0.0.19) or higher
 
 ## Documentation
 
@@ -220,17 +214,12 @@ To obtain cookies:
 - `get_user_tweets`: Fetch tweets from a specific user
 - `get_tweet_by_id`: Fetch a specific tweet by ID
 - `search_tweets`: Search for tweets
-- `send_tweet`: Post a new tweet
-- `send_tweet_with_poll`: Post a tweet with a poll
-- `like_tweet`: Like a tweet
-- `retweet`: Retweet a tweet
-- `quote_tweet`: Quote a tweet
 - `get_user_profile`: Get a user's profile
-- `follow_user`: Follow a user
 - `get_followers`: Get a user's followers
 - `get_following`: Get users a user is following
-- `grok_chat`: Chat with Grok via Twitter
 - `health_check`: Check the health of the Twitter MCP server
+
+All tools are read-only; write operations are not supported by the underlying library.
 
 ## Testing Interface
 
