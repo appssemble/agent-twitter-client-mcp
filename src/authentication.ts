@@ -30,9 +30,13 @@ export class AuthenticationManager {
       return this.scraperInstances.get(key)!;
     }
 
-    // Create a new scraper and authenticate
+    // Create a new scraper and authenticate.
+    // xClientTransactionId: X enforces the x-client-transaction-id header on
+    // some GraphQL endpoints (Followers among them) and answers 404 - not
+    // 401 - when it is missing, so the header generation must be opted in.
     const scraper = new Scraper({
-      transform: { request: rewriteGraphqlRequest }
+      transform: { request: rewriteGraphqlRequest },
+      experimental: { xClientTransactionId: true, xpff: false }
     });
     try {
       await this.authenticate(scraper, config);
