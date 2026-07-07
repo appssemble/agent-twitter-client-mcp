@@ -1,7 +1,9 @@
 # Use a Node.js image for building the server
 # (Debian-based: agent-twitter-client's native wrtc binary requires glibc,
 # which Alpine/musl does not provide)
-FROM node:20-slim AS builder
+# Node >= 22: x-client-transaction-id uses ArrayBuffer.prototype.transfer,
+# which does not exist before Node 21.
+FROM node:22-slim AS builder
 
 # Set the working directory in the container
 WORKDIR /app
@@ -20,7 +22,7 @@ COPY src/ ./src/
 RUN npm run build
 
 # Use a smaller Node.js image for the runtime
-FROM node:20-slim
+FROM node:22-slim
 
 # Set the working directory in the runtime image
 WORKDIR /app
