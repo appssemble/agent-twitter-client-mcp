@@ -5,6 +5,7 @@ import {
   CredentialsAuth,
   TwitterMcpError
 } from './types.js';
+import { createResilientFetch } from './utils/resilient-fetch.js';
 
 export class AuthenticationManager {
   private static instance: AuthenticationManager;
@@ -35,7 +36,13 @@ export class AuthenticationManager {
     // 401 - when it is missing, so the header generation must be opted in.
     // (Generating it needs ArrayBuffer.prototype.transfer, hence Node >= 22.)
     const scraper = new Scraper({
-      experimental: { xClientTransactionId: true, xpff: false }
+      experimental: { xClientTransactionId: true, xpff: false },
+      // X intermittently serves datacenter IPs a homepage that lacks the
+      // webpack runtime the transaction-id generator scrapes, and the scraper
+      // caches that unusable page for 5 minutes - one bad fetch then fails
+      // every call for the whole window. Retry the homepage until it is usable
+      // so only a good document is ever cached.
+      fetch: createResilientFetch()
     });
     try {
       await this.authenticate(scraper, config);
