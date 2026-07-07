@@ -5,7 +5,6 @@ import {
   CredentialsAuth,
   TwitterMcpError
 } from './types.js';
-import { rewriteGraphqlRequest } from './utils/graphql-overrides.js';
 
 export class AuthenticationManager {
   private static instance: AuthenticationManager;
@@ -34,8 +33,8 @@ export class AuthenticationManager {
     // xClientTransactionId: X enforces the x-client-transaction-id header on
     // some GraphQL endpoints (Followers among them) and answers 404 - not
     // 401 - when it is missing, so the header generation must be opted in.
+    // (Generating it needs ArrayBuffer.prototype.transfer, hence Node >= 22.)
     const scraper = new Scraper({
-      transform: { request: rewriteGraphqlRequest },
       experimental: { xClientTransactionId: true, xpff: false }
     });
     try {

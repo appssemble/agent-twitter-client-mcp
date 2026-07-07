@@ -79,8 +79,5 @@
   "homepage": "https://github.com/ryanmac/agent-twitter-client-mcp#readme",
   "publishConfig": {
     "access": "public"
-  },
-  "overrides": {
-    "x-client-transaction-id": "^0.3.1"
   }
 }
