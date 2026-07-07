@@ -2,7 +2,7 @@ import { Tweet, Profile } from '@the-convocation/twitter-scraper';
 import { TweetResponse, ProfileResponse, SearchResponse } from '../types.js';
 
 /**
- * Format a Tweet object from agent-twitter-client to TweetResponse
+ * Format a Tweet object from the scraper to TweetResponse
  */
 export function formatTweet(tweet: Tweet): TweetResponse {
   return {
@@ -41,7 +41,7 @@ export function formatTweet(tweet: Tweet): TweetResponse {
 }
 
 /**
- * Format a Profile object from agent-twitter-client to ProfileResponse
+ * Format a Profile object from the scraper to ProfileResponse
  */
 export function formatProfile(profile: Profile): ProfileResponse {
   return {

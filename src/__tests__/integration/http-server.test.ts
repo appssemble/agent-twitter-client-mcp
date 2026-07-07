@@ -83,6 +83,10 @@ describe('HTTP transport', () => {
       'get_user_profile',
       'get_followers',
       'get_following',
+      'post_tweet',
+      'follow_user',
+      'like_tweet',
+      'retweet',
       'health_check'
     ]);
   });

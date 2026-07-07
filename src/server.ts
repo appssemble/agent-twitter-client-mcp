@@ -9,6 +9,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { TweetTools } from './tools/tweets.js';
 import { ProfileTools } from './tools/profiles.js';
+import { WriteTools } from './tools/write.js';
 import { TwitterMcpError, AuthConfig } from './types.js';
 import { performHealthCheck } from './health.js';
 import { logError, logInfo, sanitizeForLogging } from './utils/logger.js';
@@ -16,6 +17,30 @@ import { logError, logInfo, sanitizeForLogging } from './utils/logger.js';
 // Create tools instances
 const tweetTools = new TweetTools();
 const profileTools = new ProfileTools();
+const writeTools = new WriteTools();
+
+// Shared input schema for the session cookies every write tool requires. The
+// acting account's cookies are supplied per call rather than from the server's
+// ambient auth. Nested under `credentials` so logs redact the whole object.
+const writeCredentialsSchema = {
+  type: 'object',
+  description: 'Session cookies for the acting Twitter/X account',
+  properties: {
+    authToken: {
+      type: 'string',
+      description: 'The account\'s auth_token cookie value'
+    },
+    ct0: {
+      type: 'string',
+      description: 'The account\'s ct0 (CSRF) cookie value'
+    },
+    twid: {
+      type: 'string',
+      description: 'The account\'s twid cookie value (e.g. "u%3D1234567890"); encodes the acting user id'
+    }
+  },
+  required: ['authToken', 'ct0', 'twid']
+} as const;
 
 // Create a configured MCP server instance. HTTP mode creates one per request
 // (stateless transport), stdio mode creates a single long-lived one.
@@ -163,6 +188,75 @@ export function createTwitterMcpServer(authConfig: AuthConfig): Server {
           }
         } as Tool,
 
+        // Write tools (require per-call account cookies)
+        {
+          name: 'post_tweet',
+          description: 'Post a tweet, optionally as a reply. Requires the acting account\'s session cookies.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              credentials: writeCredentialsSchema,
+              text: {
+                type: 'string',
+                description: 'Tweet text (1-280 characters)'
+              },
+              replyToTweetId: {
+                type: 'string',
+                description: 'ID of the tweet to reply to (optional)'
+              }
+            },
+            required: ['credentials', 'text']
+          }
+        } as Tool,
+
+        {
+          name: 'follow_user',
+          description: 'Follow a user by username. Requires the acting account\'s session cookies.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              credentials: writeCredentialsSchema,
+              username: {
+                type: 'string',
+                description: 'Twitter username to follow (without @)'
+              }
+            },
+            required: ['credentials', 'username']
+          }
+        } as Tool,
+
+        {
+          name: 'like_tweet',
+          description: 'Like a tweet by ID. Requires the acting account\'s session cookies.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              credentials: writeCredentialsSchema,
+              id: {
+                type: 'string',
+                description: 'Tweet ID to like'
+              }
+            },
+            required: ['credentials', 'id']
+          }
+        } as Tool,
+
+        {
+          name: 'retweet',
+          description: 'Retweet a tweet by ID. Requires the acting account\'s session cookies.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              credentials: writeCredentialsSchema,
+              id: {
+                type: 'string',
+                description: 'Tweet ID to retweet'
+              }
+            },
+            required: ['credentials', 'id']
+          }
+        } as Tool,
+
         // Health check tool
         {
           name: 'health_check',
@@ -236,6 +330,39 @@ export function createTwitterMcpServer(authConfig: AuthConfig): Server {
             content: [{
               type: 'text',
               text: JSON.stringify(await profileTools.getFollowing(authConfig, args))
+            }] as TextContent[]
+          };
+
+        // Write tools (credentials come from args, not the server auth config)
+        case 'post_tweet':
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify(await writeTools.postTweet(args))
+            }] as TextContent[]
+          };
+
+        case 'follow_user':
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify(await writeTools.followUser(args))
+            }] as TextContent[]
+          };
+
+        case 'like_tweet':
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify(await writeTools.likeTweet(args))
+            }] as TextContent[]
+          };
+
+        case 'retweet':
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify(await writeTools.retweet(args))
             }] as TextContent[]
           };
 

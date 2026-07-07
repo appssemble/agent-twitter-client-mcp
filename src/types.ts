@@ -27,6 +27,17 @@ export interface ApiAuth {
   accessTokenSecret: string;
 }
 
+// Credentials passed per-call to write tools. Writes are not backed by the
+// server's ambient auth: the caller supplies the acting account's session
+// cookies with every write request. rettiwt-api needs three cookies:
+// auth_token (session), ct0 (CSRF), and twid (encodes the acting user's id,
+// which rettiwt requires to build its API key).
+export interface WriteCredentials {
+  authToken: string;
+  ct0: string;
+  twid: string;
+}
+
 // Tool Input Schemas
 export const GetUserTweetsSchema = zod.object({
   username: zod.string().min(1, 'Username is required'),
@@ -48,48 +59,37 @@ export const SearchTweetsSchema = zod.object({
   searchMode: zod.string().default('Top')
 });
 
-export const SendTweetSchema = zod.object({
-  text: zod.string().min(1, 'Tweet text is required').max(280, 'Tweet cannot exceed 280 characters'),
-  replyToTweetId: zod.string().optional(),
-  media: zod.array(zod.object({
-    data: zod.string(), // Base64 encoded media
-    mediaType: zod.string() // MIME type
-  })).optional()
+// Session cookies for the acting account, shared by every write tool. Nested
+// under a `credentials` key so sanitizeForLogging redacts the whole object in
+// logs (the key matches its "credential" filter; a bare `ct0` would not).
+export const WriteCredentialsSchema = zod.object({
+  authToken: zod.string().min(1, 'authToken cookie is required'),
+  ct0: zod.string().min(1, 'ct0 cookie is required'),
+  twid: zod.string().min(1, 'twid cookie is required')
 });
 
-export const SendTweetWithPollSchema = zod.object({
+export const PostTweetSchema = zod.object({
+  credentials: WriteCredentialsSchema,
   text: zod.string().min(1, 'Tweet text is required').max(280, 'Tweet cannot exceed 280 characters'),
-  replyToTweetId: zod.string().optional(),
-  poll: zod.object({
-    options: zod.array(zod.object({
-      label: zod.string().min(1).max(25)
-    })).min(2).max(4),
-    durationMinutes: zod.number().int().min(5).max(10080).default(1440) // Default 24 hours
-  })
+  replyToTweetId: zod.string().optional()
+});
+
+export const FollowUserSchema = zod.object({
+  credentials: WriteCredentialsSchema,
+  username: zod.string().min(1, 'Username is required')
 });
 
 export const LikeTweetSchema = zod.object({
+  credentials: WriteCredentialsSchema,
   id: zod.string().min(1, 'Tweet ID is required')
 });
 
 export const RetweetSchema = zod.object({
+  credentials: WriteCredentialsSchema,
   id: zod.string().min(1, 'Tweet ID is required')
 });
 
-export const QuoteTweetSchema = zod.object({
-  text: zod.string().min(1, 'Tweet text is required').max(280, 'Tweet cannot exceed 280 characters'),
-  quotedTweetId: zod.string().min(1, 'Quoted tweet ID is required'),
-  media: zod.array(zod.object({
-    data: zod.string(), // Base64 encoded media
-    mediaType: zod.string() // MIME type
-  })).optional()
-});
-
 export const GetUserProfileSchema = zod.object({
-  username: zod.string().min(1, 'Username is required')
-});
-
-export const FollowUserSchema = zod.object({
   username: zod.string().min(1, 'Username is required')
 });
 

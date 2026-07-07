@@ -6,11 +6,14 @@
 
 A Model Context Protocol (MCP) server that integrates with Twitter/X using the [`@the-convocation/twitter-scraper`](https://github.com/the-convocation/twitter-scraper) package, allowing AI models to read Twitter data without direct API access.
 
-> **Note (2026):** This server previously used `agent-twitter-client`, which is
-> unmaintained and no longer works against X's current API surface. It now
-> uses the actively maintained scraper it was originally forked from. That
-> library is **read-only**, so write operations (posting, liking, retweeting,
-> following) and Grok chat were removed.
+> **Note (2026):** Read operations use the actively maintained
+> `@the-convocation/twitter-scraper`. Write operations (posting, following,
+> liking, retweeting) are served by [`rettiwt-api`](https://www.npmjs.com/package/rettiwt-api),
+> an actively maintained unofficial client. Write tools require the acting
+> account's session cookies (`auth_token`, `ct0`, and `twid`) to be passed
+> **with each call**, rather than using the server's ambient auth. Because
+> `rettiwt-api` is an unofficial scraper, write actions carry the usual
+> automation/ToS risk — use them at your own discretion.
 
 ## Features
 
@@ -29,6 +32,13 @@ A Model Context Protocol (MCP) server that integrates with Twitter/X using the [
 
   - Get user profiles
   - Get followers and following lists
+
+- **Write Operations** (require per-call account cookies):
+
+  - Post a tweet (optionally as a reply)
+  - Follow a user
+  - Like a tweet
+  - Retweet a tweet
 
 ## Documentation
 
@@ -217,9 +227,28 @@ To obtain cookies:
 - `get_user_profile`: Get a user's profile
 - `get_followers`: Get a user's followers
 - `get_following`: Get users a user is following
+- `post_tweet`: Post a tweet, optionally as a reply (write)
+- `follow_user`: Follow a user by username (write)
+- `like_tweet`: Like a tweet by ID (write)
+- `retweet`: Retweet a tweet by ID (write)
 - `health_check`: Check the health of the Twitter MCP server
 
-All tools are read-only; write operations are not supported by the underlying library.
+Read tools use the server's configured authentication. Write tools (`post_tweet`,
+`follow_user`, `like_tweet`, `retweet`) instead take a `credentials` object with
+the acting account's `auth_token`, `ct0`, and `twid` cookie values on every call.
+`twid` encodes the acting user's id (e.g. `u%3D1234567890`) and is required by
+`rettiwt-api`. Example:
+
+```json
+{
+  "credentials": {
+    "authToken": "<auth_token cookie>",
+    "ct0": "<ct0 cookie>",
+    "twid": "u%3D1234567890"
+  },
+  "text": "Hello from the MCP!"
+}
+```
 
 ## Testing Interface
 
