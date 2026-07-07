@@ -5,6 +5,7 @@ import {
   CredentialsAuth,
   TwitterMcpError
 } from './types.js';
+import { rewriteGraphqlRequest } from './utils/graphql-overrides.js';
 
 export class AuthenticationManager {
   private static instance: AuthenticationManager;
@@ -30,7 +31,9 @@ export class AuthenticationManager {
     }
 
     // Create a new scraper and authenticate
-    const scraper = new Scraper();
+    const scraper = new Scraper({
+      transform: { request: rewriteGraphqlRequest }
+    });
     try {
       await this.authenticate(scraper, config);
       this.scraperInstances.set(key, scraper);
